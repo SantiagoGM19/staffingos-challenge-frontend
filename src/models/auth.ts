@@ -20,3 +20,10 @@ export interface AuthData {
   user: User;
   token: string;
 }
+
+export interface ValidationError {
+  message: string;
+  rule: string;
+  field: string;
+  meta?: any;
+}

@@ -18,14 +18,13 @@
               autocomplete="email"
               required
               v-model="email"
-              class="
-                appearance-none relative block w-full 
-                px-3 py-2 border border-gray-300 rounded-md 
-                placeholder-gray-500 text-gray-900 sm:text-sm
-                focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10
-              "
+              :class="[
+                'appearance-none relative block w-full px-3 py-2 border rounded-md placeholder-gray-500 text-gray-900 sm:text-sm focus:outline-none focus:ring-indigo-500 focus:z-10',
+                fieldErrors.email ? 'border-red-300 focus:border-red-500' : 'border-gray-300 focus:border-indigo-500'
+              ]"
               placeholder="Enter your email"
             />
+            <p v-if="fieldErrors.email" class="mt-1 text-xs text-red-500">{{ fieldErrors.email }}</p>
           </div>
           <div>
             <label for="password" class="text-sm font-medium text-gray-700 block mb-1">Password</label>
@@ -36,14 +35,13 @@
               autocomplete="current-password"
               required
               v-model="password"
-              class="
-                appearance-none relative block w-full 
-                px-3 py-2 border border-gray-300 rounded-md 
-                placeholder-gray-500 text-gray-900 sm:text-sm
-                focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10
-              "
+              :class="[
+                'appearance-none relative block w-full px-3 py-2 border rounded-md placeholder-gray-500 text-gray-900 sm:text-sm focus:outline-none focus:ring-indigo-500 focus:z-10',
+                fieldErrors.password ? 'border-red-300 focus:border-red-500' : 'border-gray-300 focus:border-indigo-500'
+              ]"
               placeholder="Enter your password"
             />
+            <p v-if="fieldErrors.password" class="mt-1 text-xs text-red-500">{{ fieldErrors.password }}</p>
           </div>
         </fieldset>
 
@@ -88,13 +86,27 @@ const password = ref('');
 const errorMessage = ref('');
 const showErrorMessage = ref(false);
 const isLoading = ref(false);
+const fieldErrors = ref<Record<string, string>>({});
 
 const router = useRouter();
 const authStore = useAuthStore();
 
+const handleError = (error: any) => {
+  if (error?.response?.status === 422 && error?.response?.data?.errors) {
+    const errors = error.response.data.errors;
+    errors.forEach((err: any) => {
+      fieldErrors.value[err.field] = err.message;
+    });
+  } else {
+    showToastError(error?.response?.data?.message || 'An error occurred during login.');
+  }
+};
+
 const handleLogin = async () => {
   isLoading.value = true;
   errorMessage.value = '';
+  fieldErrors.value = {};
+  
   try {
     const success = await authStore.login({ email: email.value, password: password.value });
     if (success) {
@@ -103,7 +115,7 @@ const handleLogin = async () => {
       showToastError('Login failed. Please check your credentials.');
     }
   } catch (error: any) {
-    showToastError(error?.response?.data?.message || 'An error occurred during login.');
+    handleError(error);
   } finally {
     isLoading.value = false;
   }
