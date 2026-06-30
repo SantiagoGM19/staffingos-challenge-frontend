@@ -80,6 +80,8 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import ToastNotification from '@/components/ToastNotification.vue';
+import { isAxiosError } from 'axios';
+import type { ValidationError } from '@/models/auth';
 
 const email = ref('');
 const password = ref('');
@@ -91,15 +93,25 @@ const fieldErrors = ref<Record<string, string>>({});
 const router = useRouter();
 const authStore = useAuthStore();
 
-const handleError = (error: any) => {
-  if (error?.response?.status === 422 && error?.response?.data?.errors) {
-    const errors = error.response.data.errors;
-    errors.forEach((err: any) => {
+const handleError = (error: unknown) => {
+  if (!isAxiosError(error)) {
+    if (error instanceof Error) {
+      showToastError(error.message);
+      return;
+    }
+    showToastError('An unexpected error occurred.');
+    return;
+  }
+
+  if (error.response?.status === 422 && error.response.data?.errors) {
+    const errors: ValidationError[] = error.response.data.errors;
+    errors.forEach((err) => {
       fieldErrors.value[err.field] = err.message;
     });
-  } else {
-    showToastError(error?.response?.data?.message || 'An error occurred during login.');
+    return;
   }
+
+  showToastError(error.response?.data?.message || 'An error occurred during login.');
 };
 
 const handleLogin = async () => {
@@ -114,7 +126,7 @@ const handleLogin = async () => {
     } else {
       showToastError('Login failed. Please check your credentials.');
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     handleError(error);
   } finally {
     isLoading.value = false;
