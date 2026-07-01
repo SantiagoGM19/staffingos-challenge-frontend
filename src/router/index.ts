@@ -19,15 +19,17 @@ const router = createRouter({
   ],
 })
 
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, from) => {
   const authStore = useAuthStore()
   
+  if (to.matched.length === 0) {
+    return { name: authStore.token ? 'home' : 'login' }
+  }
+
   if (to.meta.requiresAuth && !authStore.token) {
-    next({ name: 'login' })
+    return { name: 'login' }
   } else if (to.name === 'login' && authStore.token) {
-    next({ name: 'home' })
-  } else {
-    next()
+    return { name: 'home' }
   }
 })
 

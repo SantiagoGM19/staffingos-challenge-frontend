@@ -69,6 +69,15 @@
         </div>
       </div>
     </Transition>
+
+    <ConfirmationModal
+      :show="postToDelete !== null"
+      title="Delete Post"
+      message="Are you sure you want to delete this post? This action cannot be undone."
+      confirm-text="Delete"
+      @confirm="confirmDelete"
+      @cancel="cancelDelete"
+    />
   </div>
 </template>
 
@@ -78,6 +87,7 @@ import { useAuthStore } from '@/stores/auth';
 import { usePostStore } from '@/stores/post';
 import type { Post } from '@/models/post';
 import PostCard from '@/components/PostCard.vue';
+import ConfirmationModal from '@/components/ConfirmationModal.vue';
 
 const authStore = useAuthStore();
 const postStore = usePostStore();
@@ -86,6 +96,7 @@ const showWelcome = ref(false);
 
 const isCreating = ref(false);
 const newPost = ref({ title: '', body: '' });
+const postToDelete = ref<number | null>(null);
 
 const userId = computed(() => {
   if (authStore.user) return authStore.user.id;
@@ -130,9 +141,19 @@ const handleUpdatePost = async (id: number, data: Omit<Post, 'id'>, onSuccess: (
   }
 };
 
-const handleDeletePost = async (id: number) => {
-  if (!confirm('Are you sure you want to delete this post?')) return;
-  await postStore.deletePost(id);
+const handleDeletePost = (id: number) => {
+  postToDelete.value = id;
+};
+
+const confirmDelete = async () => {
+  if (postToDelete.value !== null) {
+    await postStore.deletePost(postToDelete.value);
+    postToDelete.value = null;
+  }
+};
+
+const cancelDelete = () => {
+  postToDelete.value = null;
 };
 
 onMounted(() => {
