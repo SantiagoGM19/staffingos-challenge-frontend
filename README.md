@@ -1,54 +1,89 @@
-# .
+# StaffingOS Challenge Frontend
 
-This template should help get you started developing with Vue 3 in Vite.
+This is a modern web application built for the StaffingOS Challenge. It serves as the frontend client that connects to a backend API to handle user authentication and post management.
 
-## Recommended IDE Setup
+## Features
 
-[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+- **Authentication**: Secure login system with robust error handling for backend validation errors (e.g., `422 Unprocessable Entity` and `401 Unauthorized`).
+- **Post Management**: Full CRUD capabilities allowing users to create, read, update, and delete their posts.
+- **Interactive UI**: Includes confirmation modals for destructive actions (like deleting posts) and global toast notifications to provide immediate feedback to the user.
+- **Comprehensive Testing**: Fully tested using Vitest and Vue Test Utils covering stores, services, utility functions, and Vue components.
+- **Responsive Design**: Polished and mobile-friendly UI built with Tailwind CSS.
 
-## Recommended Browser Setup
+## Tech Stack
 
-- Chromium-based browsers (Chrome, Edge, Brave, etc.):
-  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd)
-  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
-- Firefox:
-  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
-  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
+- **Framework**: [Vue 3](https://vuejs.org/) (Composition API)
+- **Build Tool**: [Vite](https://vitejs.dev/)
+- **Language**: [TypeScript](https://www.typescriptlang.org/)
+- **State Management**: [Pinia](https://pinia.vuejs.org/)
+- **Routing**: [Vue Router](https://router.vuejs.org/)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+- **HTTP Client**: [Axios](https://axios-http.com/)
+- **Testing**: [Vitest](https://vitest.dev/) & [@vue/test-utils](https://test-utils.vuejs.org/)
 
-## Type Support for `.vue` Imports in TS
+## Project Structure
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
-
-## Customize configuration
-
-See [Vite Configuration Reference](https://vite.dev/config/).
-
-## Project Setup
-
-```sh
-npm install
+```text
+src/
+├── api/          # Axios instance configuration and interceptors
+├── components/   # Reusable UI components (PostCard, ToastNotification, ConfirmationModal)
+├── models/       # TypeScript interfaces and type definitions
+├── router/       # Vue Router configuration and navigation guards
+├── services/     # API interaction layer (authService, postService)
+├── stores/       # Pinia stores for global state (auth, post, ui)
+├── utils/        # Utility functions (e.g., API error parsing)
+├── views/        # Page-level components (LoginView, HomeView)
+├── App.vue       # Root application component
+└── main.ts       # Application entry point
 ```
 
-### Compile and Hot-Reload for Development
+## Setup Instructions
 
-```sh
+### Prerequisites
+- [Node.js](https://nodejs.org/) (v16 or higher recommended)
+- `npm` or `yarn`
+
+### Installation
+
+1. Clone the repository and navigate to the project directory.
+2. Install the dependencies:
+   ```bash
+   npm install
+   ```
+3. Create a `.env` file in the root directory based on `.env.example` (if provided), or set the API base URL directly:
+   ```env
+   VITE_API_URL=http://localhost:3333
+   ```
+   *(Ensure this points to the running backend service).*
+
+### Running for Development
+
+Start the Vite development server with Hot-Module Replacement (HMR):
+```bash
 npm run dev
 ```
 
-### Type-Check, Compile and Minify for Production
+### Building for Production
 
-```sh
+Type-check the codebase and build an optimized production bundle:
+```bash
 npm run build
 ```
 
-### Run Unit Tests with [Vitest](https://vitest.dev/)
+## Testing
 
-```sh
+### Unit Tests
+The project features a comprehensive unit test suite covering API services, Pinia stores, Vue components, and Views.
+
+To run the unit tests in watch mode:
+```bash
 npm run test:unit
 ```
 
-### Lint with [ESLint](https://eslint.org/)
-
-```sh
-npm run lint
+To run the unit tests a single time:
+```bash
+npm run test:unit -- --run
 ```
+
+### API Backend Testing
+A Postman collection is included in the root directory of this repository (`staffingos challenge.postman_collection.json`). You can import this file into Postman to easily test the backend API endpoints directly.
