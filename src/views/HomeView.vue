@@ -2,7 +2,7 @@
   <div class="relative min-h-screen bg-gray-50 overflow-hidden">
     <!-- Welcome Screen -->
     <Transition name="fade-slide">
-      <div v-if="showWelcome" class="absolute inset-0 flex items-center justify-center bg-indigo-600 z-50">
+      <div v-if="showWelcome" class="fixed inset-0 flex items-center justify-center bg-indigo-600 z-50">
         <h1 class="text-5xl md:text-7xl font-extrabold text-white tracking-tight text-center drop-shadow-lg">
           Welcome, {{ authStore.user?.name || 'User' }}!
         </h1>
@@ -12,14 +12,8 @@
     <!-- Post List -->
     <Transition name="fade">
       <div v-if="!showWelcome" class="p-8 max-w-7xl mx-auto h-full">
-        <div class="flex justify-between items-center mb-8">
-          <h1 class="text-3xl font-bold text-gray-900">My Posts</h1>
-          <button 
-            @click="handleLogout" 
-            class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition cursor-pointer shadow"
-          >
-            Logout
-          </button>
+        <div class="mb-6">
+          <h2 class="text-2xl font-bold text-gray-800">My Posts</h2>
         </div>
 
         <div v-if="loading" class="text-center py-12">
@@ -116,10 +110,6 @@ onMounted(() => {
   }
 });
 
-const handleLogout = () => {
-  authStore.logout();
-  router.push({ name: 'login' });
-};
 </script>
 
 <style scoped>
