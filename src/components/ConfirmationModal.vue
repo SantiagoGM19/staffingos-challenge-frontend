@@ -1,11 +1,10 @@
 <template>
-  <Transition name="modal">
-    <div v-if="show" class="fixed inset-0 z-50 flex items-center justify-center">
-      <!-- Backdrop -->
-      <div class="absolute inset-0 bg-gray-900/50 backdrop-blur-sm transition-opacity" @click="cancel"></div>
+  <div v-if="show" class="fixed inset-0 z-50 flex items-center justify-center">
+    <!-- Backdrop -->
+      <div class="absolute inset-0 bg-gray-900/50 backdrop-blur-sm" @click="cancel"></div>
 
       <!-- Modal Panel -->
-      <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-md p-6 overflow-hidden transform transition-all">
+      <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-md p-6 overflow-hidden transform">
         <div class="flex items-start space-x-4">
           <div class="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
             <svg class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -39,8 +38,7 @@
           </button>
         </div>
       </div>
-    </div>
-  </Transition>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -73,20 +71,3 @@ const cancel = () => {
   emit('cancel');
 };
 </script>
-
-<style scoped>
-.modal-enter-active,
-.modal-leave-active {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.modal-enter-from,
-.modal-leave-to {
-  opacity: 0;
-}
-
-.modal-enter-from .transform,
-.modal-leave-to .transform {
-  transform: scale(0.95) translateY(10px);
-}
-</style>
