@@ -122,6 +122,7 @@ const handleLogin = async () => {
   try {
     const success = await authStore.login({ email: email.value, password: password.value });
     if (success) {
+      sessionStorage.setItem('justLoggedIn', 'true');
       router.push({ name: 'home' });
     } else {
       showToastError('Login failed. Please check your credentials.');

@@ -1,25 +1,147 @@
 <template>
-  <div class="p-8">
-    <h1 class="text-2xl font-bold mb-4">Post List</h1>
-    <p>Welcome! You are logged in.</p>
-    <button 
-      @click="handleLogout" 
-      class="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-    >
-      Logout
-    </button>
+  <div class="relative min-h-screen bg-gray-50 overflow-hidden">
+    <!-- Welcome Screen -->
+    <Transition name="fade-slide">
+      <div v-if="showWelcome" class="absolute inset-0 flex items-center justify-center bg-indigo-600 z-50">
+        <h1 class="text-5xl md:text-7xl font-extrabold text-white tracking-tight text-center drop-shadow-lg">
+          Welcome, {{ authStore.user?.name || 'User' }}!
+        </h1>
+      </div>
+    </Transition>
+
+    <!-- Post List -->
+    <Transition name="fade">
+      <div v-if="!showWelcome" class="p-8 max-w-7xl mx-auto h-full">
+        <div class="flex justify-between items-center mb-8">
+          <h1 class="text-3xl font-bold text-gray-900">My Posts</h1>
+          <button 
+            @click="handleLogout" 
+            class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition cursor-pointer shadow"
+          >
+            Logout
+          </button>
+        </div>
+
+        <div v-if="loading" class="text-center py-12">
+          <p class="text-gray-500 text-lg">Loading posts...</p>
+        </div>
+
+        <div v-else-if="error" class="text-center py-12 text-red-500">
+          <p class="text-lg">{{ error }}</p>
+        </div>
+
+        <div v-else-if="posts.length === 0" class="text-center py-12">
+          <p class="text-gray-500 text-lg">No posts found.</p>
+        </div>
+
+        <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div 
+            v-for="post in posts" 
+            :key="post.id" 
+            class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+          >
+            <h2 class="text-xl font-bold mb-3 text-gray-800">{{ post.title || 'Untitled Post' }}</h2>
+            <p class="text-gray-600 line-clamp-3 leading-relaxed">{{ post.body }}</p>
+          </div>
+        </div>
+      </div>
+    </Transition>
   </div>
 </template>
 
 <script setup lang="ts">
+import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
+import { postService } from '@/services/postService';
+import type { Post } from '@/models/post';
 
 const router = useRouter();
 const authStore = useAuthStore();
+
+const posts = ref<Post[]>([]);
+const loading = ref(true);
+const error = ref('');
+const showWelcome = ref(false);
+
+const userId = computed(() => {
+  if (authStore.user) return authStore.user.id;
+  
+  const token = authStore.token;
+  if (token) {
+    try {
+      const base64Url = token.split('.')[1];
+      if (base64Url) {
+        const payload = JSON.parse(atob(base64Url));
+        return payload.sub;
+      }
+    } catch (e) {
+      console.error('Failed to parse token payload', e);
+    }
+  }
+  return null;
+});
+
+const fetchPosts = async () => {
+  if (!userId.value) {
+    error.value = 'User ID not found. Please log in again.';
+    loading.value = false;
+    return;
+  }
+  
+  try {
+    loading.value = true;
+    error.value = '';
+    posts.value = await postService.getPostsByUserId(userId.value);
+  } catch (err) {
+    console.error(err);
+    error.value = 'Failed to load posts.';
+  } finally {
+    loading.value = false;
+  }
+};
+
+onMounted(() => {
+  if (sessionStorage.getItem('justLoggedIn') === 'true') {
+    showWelcome.value = true;
+    sessionStorage.removeItem('justLoggedIn');
+    setTimeout(() => {
+      showWelcome.value = false;
+      setTimeout(() => {
+        fetchPosts();
+      }, 500); // small delay to allow transition to finish
+    }, 2500);
+  } else {
+    fetchPosts();
+  }
+});
 
 const handleLogout = () => {
   authStore.logout();
   router.push({ name: 'login' });
 };
 </script>
+
+<style scoped>
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.8s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: all 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.fade-slide-enter-from {
+  opacity: 0;
+  transform: scale(0.95) translateY(-20px);
+}
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: scale(1.05) translateY(20px);
+}
+</style>
