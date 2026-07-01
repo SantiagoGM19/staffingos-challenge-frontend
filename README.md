@@ -84,6 +84,3 @@ To run the unit tests a single time:
 ```bash
 npm run test:unit -- --run
 ```
-
-### API Backend Testing
-A Postman collection is included in the root directory of this repository (`staffingos challenge.postman_collection.json`). You can import this file into Postman to easily test the backend API endpoints directly.
