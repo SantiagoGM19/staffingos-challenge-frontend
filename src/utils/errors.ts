@@ -21,7 +21,7 @@ export const parseApiError = (error: unknown, defaultMessage = 'An unexpected er
 
   // Handle 422 Validation Errors
   if (error.response?.status === 422 && error.response.data?.errors) {
-    return new AppError('Validation failed', error.response.data.errors);
+    return new AppError(error.response.data.message || 'Validation failed', error.response.data.errors);
   }
 
   // Handle standardized API error responses

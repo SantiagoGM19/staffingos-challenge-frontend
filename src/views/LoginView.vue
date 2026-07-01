@@ -73,8 +73,7 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { useUiStore } from '@/stores/ui';
-import { isAxiosError } from 'axios';
-import type { ValidationError } from '@/models/auth';
+import { AppError } from '@/utils/errors';
 
 const email = ref('');
 const password = ref('');
@@ -86,24 +85,18 @@ const authStore = useAuthStore();
 const uiStore = useUiStore();
 
 const handleError = (error: unknown) => {
-  if (!isAxiosError(error)) {
-    if (error instanceof Error) {
-      uiStore.showNotification(error.message, 'Login Failed', 'error');
-      return;
-    }
-    uiStore.showNotification('An unexpected error occurred.', 'Login Failed', 'error');
-    return;
-  }
-
-  if (error.response?.status === 422 && error.response.data?.errors) {
-    const errors: ValidationError[] = error.response.data.errors;
-    errors.forEach((err) => {
+  if (error instanceof AppError && error.validationErrors && error.validationErrors.length > 0) {
+    error.validationErrors.forEach((err) => {
       fieldErrors.value[err.field] = err.message;
     });
+  }
+
+  if (error instanceof Error) {
+    uiStore.showNotification(error.message, 'Login Failed', 'error');
     return;
   }
 
-  uiStore.showNotification(error.response?.data?.message || 'An error occurred during login.', 'Login Failed', 'error');
+  uiStore.showNotification('An unexpected error occurred during login.', 'Login Failed', 'error');
 };
 
 const handleLogin = async () => {
