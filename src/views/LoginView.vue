@@ -65,13 +65,6 @@
       </form>
     </section>
 
-    <!-- Error Toast Notification -->
-    <ToastNotification 
-      :show="showErrorMessage" 
-      :message="errorMessage"
-      title="Login Failed"
-      @close="showErrorMessage = false" 
-    />
   </main>
 </template>
 
@@ -79,27 +72,26 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
-import ToastNotification from '@/components/ToastNotification.vue';
+import { useUiStore } from '@/stores/ui';
 import { isAxiosError } from 'axios';
 import type { ValidationError } from '@/models/auth';
 
 const email = ref('');
 const password = ref('');
-const errorMessage = ref('');
-const showErrorMessage = ref(false);
 const isLoading = ref(false);
 const fieldErrors = ref<Record<string, string>>({});
 
 const router = useRouter();
 const authStore = useAuthStore();
+const uiStore = useUiStore();
 
 const handleError = (error: unknown) => {
   if (!isAxiosError(error)) {
     if (error instanceof Error) {
-      showToastError(error.message);
+      uiStore.showNotification(error.message, 'Login Failed', 'error');
       return;
     }
-    showToastError('An unexpected error occurred.');
+    uiStore.showNotification('An unexpected error occurred.', 'Login Failed', 'error');
     return;
   }
 
@@ -111,12 +103,11 @@ const handleError = (error: unknown) => {
     return;
   }
 
-  showToastError(error.response?.data?.message || 'An error occurred during login.');
+  uiStore.showNotification(error.response?.data?.message || 'An error occurred during login.', 'Login Failed', 'error');
 };
 
 const handleLogin = async () => {
   isLoading.value = true;
-  errorMessage.value = '';
   fieldErrors.value = {};
   
   try {
@@ -125,21 +116,12 @@ const handleLogin = async () => {
       sessionStorage.setItem('justLoggedIn', 'true');
       router.push({ name: 'home' });
     } else {
-      showToastError('Login failed. Please check your credentials.');
+      uiStore.showNotification('Login failed. Please check your credentials.', 'Login Failed', 'error');
     }
   } catch (error: unknown) {
     handleError(error);
   } finally {
     isLoading.value = false;
   }
-};
-
-const showToastError = (msg: string) => {
-  errorMessage.value = msg;
-  showErrorMessage.value = true;
-  setTimeout(() => {
-    errorMessage.value = '';
-    showErrorMessage.value = false;
-  }, 5000);
 };
 </script>

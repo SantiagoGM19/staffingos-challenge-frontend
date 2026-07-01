@@ -12,31 +12,60 @@
     <!-- Post List -->
     <Transition name="fade">
       <div v-if="!showWelcome" class="p-8 max-w-7xl mx-auto h-full">
-        <div class="mb-6">
+        <div class="mb-6 flex justify-between items-center">
           <h2 class="text-2xl font-bold text-gray-800">My Posts</h2>
+          <button 
+            @click="isCreating = !isCreating"
+            class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 flex items-center space-x-2"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path v-if="!isCreating" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+              <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+            <span>{{ isCreating ? 'Cancel' : 'New Post' }}</span>
+          </button>
         </div>
 
-        <div v-if="loading" class="text-center py-12">
+        <div v-if="isCreating" class="bg-white rounded-xl shadow-sm p-6 border border-indigo-100 mb-8">
+          <h3 class="text-lg font-bold mb-4 text-gray-900">Create a New Post</h3>
+          <form @submit.prevent="handleCreatePost" class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Title</label>
+              <input v-model="newPost.title" required type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="Post title" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Body</label>
+              <textarea v-model="newPost.body" required rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="What's on your mind?"></textarea>
+            </div>
+            <div class="flex justify-end">
+              <button type="submit" :disabled="postStore.actionLoading" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition disabled:opacity-50">
+                {{ postStore.actionLoading ? 'Saving...' : 'Publish Post' }}
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <div v-if="postStore.loading" class="text-center py-12">
           <p class="text-gray-500 text-lg">Loading posts...</p>
         </div>
 
-        <div v-else-if="error" class="text-center py-12 text-red-500">
-          <p class="text-lg">{{ error }}</p>
+        <div v-else-if="postStore.error" class="text-center py-12 text-red-500">
+          <p class="text-lg">{{ postStore.error }}</p>
         </div>
 
-        <div v-else-if="posts.length === 0" class="text-center py-12">
+        <div v-else-if="postStore.posts.length === 0" class="text-center py-12">
           <p class="text-gray-500 text-lg">No posts found.</p>
         </div>
 
         <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div 
-            v-for="post in posts" 
+          <PostCard 
+            v-for="post in postStore.posts" 
             :key="post.id" 
-            class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
-          >
-            <h2 class="text-xl font-bold mb-3 text-gray-800">{{ post.title || 'Untitled Post' }}</h2>
-            <p class="text-gray-600 line-clamp-3 leading-relaxed">{{ post.body }}</p>
-          </div>
+            :post="post" 
+            :loading="postStore.actionLoading"
+            @update="handleUpdatePost"
+            @delete="handleDeletePost"
+          />
         </div>
       </div>
     </Transition>
@@ -45,18 +74,18 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
-import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
-import { postService } from '@/services/postService';
+import { usePostStore } from '@/stores/post';
 import type { Post } from '@/models/post';
+import PostCard from '@/components/PostCard.vue';
 
-const router = useRouter();
 const authStore = useAuthStore();
+const postStore = usePostStore();
 
-const posts = ref<Post[]>([]);
-const loading = ref(true);
-const error = ref('');
 const showWelcome = ref(false);
+
+const isCreating = ref(false);
+const newPost = ref({ title: '', body: '' });
 
 const userId = computed(() => {
   if (authStore.user) return authStore.user.id;
@@ -77,22 +106,33 @@ const userId = computed(() => {
 });
 
 const fetchPosts = async () => {
-  if (!userId.value) {
-    error.value = 'User ID not found. Please log in again.';
-    loading.value = false;
-    return;
+  if (!userId.value) return;
+  await postStore.fetchPosts(userId.value);
+};
+
+const handleCreatePost = async () => {
+  if (!userId.value) return;
+  const success = await postStore.createPost({
+    title: newPost.value.title,
+    body: newPost.value.body,
+    userId: userId.value
+  });
+  if (success) {
+    isCreating.value = false;
+    newPost.value = { title: '', body: '' };
   }
-  
-  try {
-    loading.value = true;
-    error.value = '';
-    posts.value = await postService.getPostsByUserId(userId.value);
-  } catch (err) {
-    console.error(err);
-    error.value = 'Failed to load posts.';
-  } finally {
-    loading.value = false;
+};
+
+const handleUpdatePost = async (id: number, data: Omit<Post, 'id'>, onSuccess: () => void) => {
+  const success = await postStore.updatePost(id, data);
+  if (success) {
+    onSuccess();
   }
+};
+
+const handleDeletePost = async (id: number) => {
+  if (!confirm('Are you sure you want to delete this post?')) return;
+  await postStore.deletePost(id);
 };
 
 onMounted(() => {
@@ -103,7 +143,7 @@ onMounted(() => {
       showWelcome.value = false;
       setTimeout(() => {
         fetchPosts();
-      }, 500); // small delay to allow transition to finish
+      }, 500);
     }, 2500);
   } else {
     fetchPosts();
